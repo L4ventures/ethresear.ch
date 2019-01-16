@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[margin=0.7in]{geometry}
+\usepackage[parfill]{parskip}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{csquotes}
+\MakeOuterQuote{"}
+
+\begin{document}
+
+title: Encumberments as a common mechanism in sharding and L2
+
+tldr: The idea of encumberments has come up under different names in cross-shard communication and plasma. We argue that recognizing the commonalities allows mechanisms with better UX, construct channels-on-plasma with channel dispute time shorter than plasma dispute time, and argue for plasma dispute times to be much longer than they are currently planned to be.
+
+\subsection*{Encumberments}
+
+The techniques presented in https://ethresear.ch/t/encumberments-instant-cross-shard-payments-over-slow-cross-shard-base-layer-communication-as-a-layer-2/4369 and https://ethresear.ch/t/simple-fast-withdrawals/2128 share common features. Here is my attempt at explaining them. Both start with base-layer-operations that are slow for some reason (cross-shard transactions on the one hand, and plasma withdrawals on the other) and that normally result in bad UX (user has to wait a long amount of time with their money stuck in the slow mechanism) and mitigate the bad UX. The mitigation mechanism uses the same property: an external observer can objectively determine the outcome of the base-layer-operation faster than the base layer can (e.g. an observer can objectively determine the outcome of a plasma exit in a few minutes if the chain is available). Note that this property does not always exist: for instance, the plasma contract must ensure that blocks roots submitted after an exit is initiated cannot be used in the exit game, otherwise this property no longer holds. Given that this property does hold, an "encumberance" is used where the beneficiary of the base-layer-operation is set to an entity that is restricted (in simple fast withdrawals as written this is basically a smart contract whose ownership right is treated as an NFT, in the cross-shard framework this is an account with an in-protocol "encumberment queue"). The restriction in necessary in that both mechanisms fail if the beneficiary is an ordinary ETH 1.0 EoA.
+
+\subsection*{Encumberance Chains}
+
+Simple encumberments as desrcibed are composable. In a chain of composed encumberments, the outcome of the base-layer operation is to send ETH to some restricted entity, which sends it to some restricted entity, and so on, where anyone can quickly convince themself that the last entity in the chain is the ultimate beneficiary even before base-layer operation resolves. This does require protocol-level support (e.g. the encumberence queue) to be really useful; if the ultimate beneficiary is an ETH 1.0 EoA, that account cannot convincingly transfer ownership to someone else. An alternative to protocol-level support is for most users to stop using EoAs directly, instead using single-owner mulisig contracts that can irreversibly encumber themselves (irreversibly set their beneficiary to some other entity).
+
+\subsection*{Extension to Channels with Shorter Dispute Lengths}
+
+Note that channel disputes do not enjoy the property that "external observers can determine the outcome of a mechanism before it is over". However, a finalized (closed) channel has this property. This is useful if the channel is funded by a plasma deposit which has a dispute time longer than the channel's (e.g., for instance, a plasma dispute period of 2 months and a channel dispute period of 1 day) and hence closes without being funded.
+
+The end result is that the beneficiary of the plasma exit is set to the state channel smart contract on ethereum. That smart contract engages in a 1-day-long dispute period over who its beneficiary is; at the end of that 1 day, it irreversibly encumbers itself to send all received money to that beneficiary.
+
+\subsection*{Payment Channel Networks, and an argument for long plasma dispute time scales}
+
+The above logic continues to hold if the channel-on-plasma is an intermediary channel in a payment channel network. Hence a payment channel network can transparently use either channels-on-ethereum or channels-on-plasma for the intermediate links.
+
+A unified encumberance mechanism is also useful if participants tend to hold their funds in multiple mechanisms at once. For instance, a user withdrawing from a typical well-behaved plasma chain will probably do so via a cross-chain atomic swap or a channelized cross-chain atomic swap.
+
+In the long term, if a protocol-level encumberance mechanism becomes commonly used, setting for the plasma dispute time scale to be very long (e.g. 2 months instead of 7-21 days as currently envisioned) becomes possible. In an ideal model where "objective verification", i.e. downloading a plasma chain's blocks and computing the outcome of a dispute, is free, the plasma time scale does not matter. However, this idealized assumption is not in fact true. For e.g., verifying the state of 100-hop payment channel for which each intermediary channel is a channel on plasma which has finalized on ethereum but for which the plasma withdrawal is still in progress requires downloading block data of 100 plasma chains, which can be prohibitively expensive. Similarly, forcing users to verifying an encumberence chain that touches 1024 different shards is unacceptable.
+The upper limit of the plasma dispute time scale will then be set by the costs of doing such verification and the typical length of encumberance chains users, which is set by usage patterns.
+
+\end{document}
