@@ -1,0 +1,11 @@
+Analysis of a simple owner-set specification scheme
+
+- first bit: inclusive or exclusive
+- then: list of ranges
+
+idea: incentive to batch always exists
+
+balances two things
+
+- cheap withdrawability at low thresholds
+- high cost of attack for a long while
