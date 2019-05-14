@@ -1,8 +1,8 @@
 Confirmation signatures for transaction validity vs slashing
 
-Many non-channel L2 systems tend to suffer from the following problem. We wish to make it not costless to make claims about the current off-chain state that are incorrect (e.g., exit a spent coin). To do so, we introduce exit bonds that are in some circumstances slashed. Of course, from the point of view of making incorrect exits costly, we would like to make the slashing occur whenever the exit fails (i.e., whenever the exitor has been shown to make a false claim). The problem arises when there is a possibility of an in-flight transaction (i.e., a transaction which has been submitted to the operator, which may or may not have been included in an committed but unavailable block) with multiple beneficiaries.
+Many non-channel L2 systems tend to suffer from the following problem. We wish to make it not costless to make claims about the current off-chain state that are incorrect (e.g., exit a spent coin). To do so, we introduce exit bonds that are in some circumstances slashed. From the point of view of making incorrect exits costly, we would like to make the slashing occur whenever the exit fails (i.e., whenever the exitor has been shown to make a false claim). The problem arises when there is a possibility of an in-flight transaction (i.e., a transaction which has been submitted to the operator, which may or may not have been included in an committed but unavailable block) with multiple beneficiaries.
 
-Let P = {Alice, Bob, Carol, Dave}. Suppose that the in-flight transaction T consumes UTXOs owned by Alice and Bob [1] and produces UTXOs owned by Carol and Dave, and it is withheld.  We do not assume that any member of P can cooperate with any other. An exit must be able to be initiated by some single member of P. There are two cases: we can disallow Alice and Bob from being beneficiaries by allowing Carol or Dave to exit as if T were always in the chain ("forced include exits"), or we can allow any of them to be beneficiaries by allowing exitors to make a claim that (i.e., an exit that succeeds when) the chain either has T or not ("limbo exit"). In either case, an individual exitor must be making a claim that can become false by no fault of their own.
+Let P = {Alice, Bob, Carol, Dave}. Suppose that the in-flight transaction T consumes UTXOs owned by Alice and Bob [1] and produces UTXOs owned by Carol and Dave, and it is withheld.  We do not assume that any member of P can cooperate with any other. It follows that an exit must be able to be initiated by some single member of P. There are two cases: we can disallow Alice and Bob from being beneficiaries by allowing Carol or Dave to exit as if T were always in the chain ("forced include exits"), or we can allow any of them to be beneficiaries by allowing exitors to make a claim that (i.e., an exit that succeeds when) the chain either contains T or not ("limbo exit"). In either case, an individual exitor must be making a claim that can become false by no fault of their own.
 
 There are a few existing solutions to this problem:
 
@@ -13,10 +13,10 @@ There are a few existing solutions to this problem:
 1. Confirmation signatures. Example: original plasma and MVP
 1. Multi-stage staggered protocols, e.g. something like [3], such that every individual step has a singleton beneficiary. One can view confirmation signatures as a special case of this.
 
-This note proposes a yet-unexplored solution similar to confirmation signatures but that is more composable. The idea is to note that confirmation signatures use the existence of the same set of signatures to define two things:
+This note proposes a yet-unexplored solution similar to confirmation signatures but that is more composable. The idea is to note that confirmation signatures use the existence of the same set of signatures to determine both:
 
-1. Is a given transaction valid
-2. Should a given exit bond be slashed
+1. If a given transaction is valid
+2. If a given exit bond should be slashed
 
 We can use different signatures for these two things. We give an example of adding this to a UTXO-based plasma cashflow system with limbo exits [4]. We start with any design that we know is secure without exit bonds, with the restriction that all exits must be initiated by a beneficiary of the exit (hence a limbo exit of a transaction T must have msg.sender equal to an address that's either an input or an output of T). All exits put up an exit bond that is slashed if a signature is provided signed by msg.sender of the digest hash(X, "revoke") where X is the TXO owned by msg.sender used in T.
 
